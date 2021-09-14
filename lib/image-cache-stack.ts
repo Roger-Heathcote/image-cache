@@ -20,6 +20,15 @@ export class ImageCacheStack extends cdk.Stack {
       }
     })
 
+    const testLambda = new lambda.Function(this, "testLambdaHandler", {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      code: lambda.Code.fromAsset("functions"),
+      handler: "test.handler",
+      environment: {
+        TABLE_NAME: table.tableName
+      }
+    })
+
     table.grantReadWriteData(addLambda)
 
     const api = new apigateway.RestApi(this, "image-cache-api", {
@@ -30,6 +39,10 @@ export class ImageCacheStack extends cdk.Stack {
     api.root
       .resourceForPath("add")
       .addMethod("GET", new apigateway.LambdaIntegration(addLambda))
+    
+    api.root
+      .resourceForPath("test")
+      .addMethod("GET", new apigateway.LambdaIntegration(testLambda))
 
     new cdk.CfnOutput(this, "API URL", {
       value: api.url ?? "Deploy problems"
