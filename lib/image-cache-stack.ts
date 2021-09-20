@@ -23,10 +23,7 @@ export class ImageCacheStack extends cdk.Stack {
     const testLambda = new lambda.Function(this, "testLambdaHandler", {
       runtime: lambda.Runtime.NODEJS_14_X,
       code: lambda.Code.fromAsset("functions"),
-      handler: "test.handler",
-      environment: {
-        TABLE_NAME: table.tableName
-      }
+      handler: "test.handler"
     })
 
     table.grantReadWriteData(addLambda)
@@ -38,7 +35,7 @@ export class ImageCacheStack extends cdk.Stack {
     
     api.root
       .resourceForPath("add")
-      .addMethod("GET", new apigateway.LambdaIntegration(addLambda))
+      .addMethod("POST", new apigateway.LambdaIntegration(addLambda))
     
     api.root
       .resourceForPath("test")
