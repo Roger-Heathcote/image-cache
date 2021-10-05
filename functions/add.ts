@@ -1,5 +1,9 @@
-const {DynamoDB} = require('aws-sdk')
+export {} // Tell TS we want module scoping
+const aws = require('aws-sdk')
+aws.config.update({region: 'eu-west-2'})
+const {DynamoDB} = aws
 const crypto = require('crypto')
+const TableName = process.env.TABLE_NAME
 
 exports.handler = async function(event:any) {
 	console.log("WooHoo! add handler ran")
@@ -30,13 +34,12 @@ exports.handler = async function(event:any) {
 	}
 
 	const db = new DynamoDB.DocumentClient()
-	const TableName = 'image-cache'
 	await db.put({
 		TableName,
 		Item
 	}).promise()
 
-	return sendRes(200, `Item added:${Item.id}<<<`)
+	return sendRes(200, `Item added: >>>${Item.id}<<<`)
 }
 
 const sendRes = (status:any, body:any) => {

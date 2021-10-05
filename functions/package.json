@@ -1,0 +1,11 @@
+{
+  "name": "image-cache-lambda-functions",
+  "version": "0.0.1",
+  "description": "Lambda functions for image-cache",
+  "main": "add.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
