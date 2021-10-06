@@ -2,76 +2,68 @@ export {} // Tell TS we want module scoping
 const aws = require('aws-sdk')
 aws.config.update({region: 'eu-west-2'})
 const {DynamoDB} = aws
-const crypto = require('crypto')
 const TableName = process.env.TABLE_NAME
+// import * as apigateway from '@aws-cdk/aws-apigateway';
 
-exports.handler = async function(event:any) {
-	console.log("WooHoo! GET handler ran")
-
-
-	// Object.keys(event?.headers || {}).forEach(key=>{
-	// 	console.log(`HEADERS ${key} = ${event[key]}`)
-	// })
-	// Object.keys(event?.multiValueHeaders || {}).forEach(key=>{
-	// 	console.log(`MVHEADERS ${key} = ${event[key]}`)
-	// })
-	// Object.keys(event?.pathParameters || {}).forEach(key=>{
-	// 	console.log(`PATHPARAM ${key} = ${event[key]}`)
-	// })
-	// Object.keys(event?.requestContext || {}).forEach(key=>{
-	// 	console.log(`REQUESTCONTEXT ${key} = ${event[key]}`)
-	// })
-
-	Object.keys(event).forEach(key=>{
-		console.log(`${key} = ${event[key]}`)
-	})
-
-	return sendRes(200, `Item requested: >>>${event["id"]}<<<`)
-
-
-
-	// if(event.body === null) return sendRes(400, "Missing POST body")
-
-	// try {var body = JSON.parse(event.body)}
-	// catch {return {code: 400, msg: "POST body is not valid JSON"}}
-
-	// if(!body.type || !body.data) return sendRes(400, "Missing type or data param")
-	
-
-	// if(["webm", "png", "jpg", "jpeg", "txt"].includes(body.type) === false) return sendRes(
-	// 	415, `Unsupported media format ${body.type}`
-	// )
-
-	// // if(body.data.length < 64) return sendRes(415, "Unsupported media format - too short")
-	// if(body.data.length < 6) return sendRes(415, "Unsupported media format - too short")
-	// if(body.data.length > 100000) return sendRes(415, "Unsupported media format - too long")
-
-	// const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
-	// if(base64regex.test(body.data) === false) return sendRes(400, "data field was not base64 encoded")
-
-	// const Item = {
-	// 	id: crypto.createHash('sha256').update(`${body.type}${body.data}`).digest('hex'),
-	// 	data: body.data,
-	// 	type: body.type
-	// }
-
-	// const db = new DynamoDB.DocumentClient()
-	// await db.put({
-	// 	TableName,
-	// 	Item
-	// }).promise()
-
-	// return sendRes(200, `Item added:${Item.id}<<<`)
+const mimeTypes: any = {
+	"webp": "image/webp",
+	"png": "image/png",
+	"jpg": "image/jpeg",
+	"jpeg": "image/jpeg",
+	"txt": "text/plain"
 }
 
-const sendRes = (status:any, body:any) => {
+
+exports.handler = async function(event:any, context:any) {
+	console.log("WooHoo! GET handler ran", )
+	const {file} = event.pathParameters
+	// return sendRes(200, JSON.stringify([event, context], null, 4))
 	
+	if(file?.length < 67) return sendRes(400, "Too short")
+	const id = file.slice(0,64)
+	if(false === /^[0-9a-f]{64}$/.test(id)) return sendRes(400, "Bad ID format")
+	const ext = file.slice(65)
+	if(false === /^webp$|^png$|^jpg$|^jpeg$|^txt$/.test(ext)) return sendRes(400, "Bad ext format")
+	
+	// Lookup record
+	const db = new DynamoDB.DocumentClient()
+	const response = await db.get({
+		TableName,
+		Key: {id}
+	}).promise()
+	const record = response?.Item
+
+	// Fail if not found
+	if(!record) return sendRes(400, "No result")
+
+	const reply = JSON.stringify(record, null, 4)
+	console.log("reply:", response)
+	
+	// Fail if ext doesn't match
+	if(record?.type !== ext) return sendRes(400, "Bad ext")
+
+	// base64 decode
+	// set headers for cache
+
+	// Serve with appropriate mime type
+
+
+	return sendRes(
+		200,
+		record.data,
+		record.type
+	)
+}
+
+const sendRes = (status:any, body:any, contentType="txt") => {
 	const response = {
 		statusCode: status,
+		// contentHandling: apigateway.ContentHandling.CONVERT_TO_BINARY,
 		headers: {
-			"Content-Type": "text/html"
+			"Content-Type": mimeTypes[contentType]
 		},
-		body
+		body,
+		isBase64Encoded: true
 	}
 	return response
 }

@@ -39,7 +39,7 @@ exports.handler = async function(event:any) {
 		Item
 	}).promise()
 
-	return sendRes(200, `Item added: >>>${Item.id}<<<`)
+	return sendRes(200, `${Item.id}.${Item.type}`)
 }
 
 const sendRes = (status:any, body:any) => {

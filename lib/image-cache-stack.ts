@@ -47,12 +47,14 @@ export class ImageCacheStack extends cdk.Stack {
     // DATABASE PERMISSIONS
 
     table.grantReadWriteData(addLambda)
+    table.grantReadWriteData(getLambda)
 
     // API
 
     const api = new apigateway.RestApi(this, "image-cache-api", {
       restApiName: "image cache",
       description: "Caches images and serve with very long expiry",
+      binaryMediaTypes: ["image/png", "image/webp", "image/jpg", "image/jpeg", "text/plain"],
       deployOptions: {
         methodOptions: {
           '/*/*': {
@@ -76,7 +78,6 @@ export class ImageCacheStack extends cdk.Stack {
     test.addMethod("GET", new apigateway.LambdaIntegration(testLambda))
 
 
-
     // ADD
     const add = api.root.addResource("add")
     add.addMethod("POST", new apigateway.LambdaIntegration(addLambda))
@@ -89,38 +90,19 @@ export class ImageCacheStack extends cdk.Stack {
     // }
 
 
-
     // GET
     const options = {
-      // proxy: false,
-      // requestParameters: {
-      //   "integration.request.path.id" : "method.request.path.id"
-      // },
-      requestTemplate: {
-        "id": "$input.params('id')",
-      }
+      contentHandling: apigateway.ContentHandling.CONVERT_TO_BINARY
     }
     const get = api.root.addResource("get")
-    const getWithId = get.addResource("{id}")
-    getWithId.addMethod("GET", new apigateway.LambdaIntegration(getLambda, options))
+    const getWithId = get.addResource("{file}")
+    getWithId.addMethod("GET", new apigateway.LambdaIntegration(
+      getLambda,
+      options
+    ))
 
-
-
-    // api.root
-    //   .resourceForPath("add")
-    //   .addMethod("POST", new apigateway.LambdaIntegration(addLambda))
-    
-    // api.root
-    //   .resourceForPath("get/{id}")
-    //   .addMethod("GET", new apigateway.LambdaIntegration(getLambda))
-    
-
-    // api.root
-    //   .resourceForPath("test")
-    //   .addMethod("GET", new apigateway.LambdaIntegration(testLambda))
 
     // TERMINAL OUTPUT
-
     new cdk.CfnOutput(this, "API URL", {
       value: api.url ?? "Deploy problems"
     })
