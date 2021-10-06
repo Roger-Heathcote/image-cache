@@ -45,16 +45,14 @@ export class ImageCacheStack extends cdk.Stack {
     })
 
     // DATABASE PERMISSIONS
-
     table.grantReadWriteData(addLambda)
     table.grantReadWriteData(getLambda)
 
     // API
-
     const api = new apigateway.RestApi(this, "image-cache-api", {
       restApiName: "image cache",
       description: "Caches images and serve with very long expiry",
-      binaryMediaTypes: ["image/png", "image/webp", "image/jpg", "image/jpeg", "text/plain"],
+      binaryMediaTypes: ["*/*"],
       deployOptions: {
         methodOptions: {
           '/*/*': {
