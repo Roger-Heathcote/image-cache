@@ -42,12 +42,6 @@ exports.handler = async function(event:any, context:any) {
 	// Fail if ext doesn't match
 	if(record?.type !== ext) return sendRes(400, "Bad ext")
 
-	// base64 decode
-	// set headers for cache
-
-	// Serve with appropriate mime type
-
-
 	return sendRes(
 		200,
 		record.data,
@@ -56,6 +50,8 @@ exports.handler = async function(event:any, context:any) {
 }
 
 const sendRes = (status:any, body:any, contentType="txt") => {
+	// set headers for cache
+	// Serve with appropriate mime type
 	const response = {
 		statusCode: status,
 		// contentHandling: apigateway.ContentHandling.CONVERT_TO_BINARY,

@@ -2,6 +2,7 @@ import * as cdk from '@aws-cdk/core';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as apigateway from '@aws-cdk/aws-apigateway';
+import { Authorizer } from '@aws-cdk/aws-apigateway';
 
 export class ImageCacheStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -19,6 +20,12 @@ export class ImageCacheStack extends cdk.Stack {
     })
     
     // LAMBDAS
+
+    const authLambda = new lambda.Function(this, "authLambdaHandler", {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      code: lambda.Code.fromAsset("functions"),
+      handler: "auth.handler",
+    })
 
     const addLambda = new lambda.Function(this, "addLambdaHandler", {
       runtime: lambda.Runtime.NODEJS_14_X,
@@ -78,25 +85,24 @@ export class ImageCacheStack extends cdk.Stack {
 
     // ADD
     const add = api.root.addResource("add")
+    // const addOptions = {
+    //   authorizationType: apigateway.AuthorizationType.CUSTOM,
+    //   Authorizer: authLambda
+    // }
     add.addMethod("POST", new apigateway.LambdaIntegration(addLambda))
+    // add.addMethod("POST", new apigateway.LambdaIntegration(addLambda), addOptions)
     // To convert binary to b64 here add an options object as second parameter to .lambdaIntegration
     // { contentHandling: apigateway.ContentHandling.CONVERT_TO_TEXT }
-    // TO add auth add options obj as third param to add Method...
-    // {
-    //   authorizationType: apigateway.AuthorizationType.IAM,
-    //   apiKeyRequired: true
-    // }
-
 
     // GET
-    const options = {
-      contentHandling: apigateway.ContentHandling.CONVERT_TO_BINARY
-    }
     const get = api.root.addResource("get")
     const getWithId = get.addResource("{file}")
+    const getIntegrationOptions = {
+      contentHandling: apigateway.ContentHandling.CONVERT_TO_BINARY
+    }
     getWithId.addMethod("GET", new apigateway.LambdaIntegration(
       getLambda,
-      options
+      getIntegrationOptions
     ))
 
 
