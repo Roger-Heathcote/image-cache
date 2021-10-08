@@ -1,31 +1,34 @@
-// import {APIGatewayProxyEventV2, APIGatewayProxyResultV2} from 'aws-lambda'
+interface authLambdaProps {
+	type: string,
+	authorizationToken: string
+	methodArn: string
+}
 
-exports.handler = async function(event: any){
+exports.handler = async function(event: authLambdaProps){
+
 	const token = event.authorizationToken
+	const secret = "Bearer " + "FORTS"
 	const methodArn = event.methodArn
 
-	return generateAuthResponse('user', 'Allow', methodArn)
-}
+	// console.log(`TOKEN:${token}, SECRET:${secret}, TOKEN===SECRET:${token===secret}`)
+	// console.log(`TY_TOKEN:${typeof token}, TY_SECRET:${typeof secret}`)
+	// console.log(`LEN_TOKEN:${token?.length}, LEN_SECRET:${secret?.length}`)
 
-function generateAuthResponse(principalId:any, effect:any, methodArn:any){
-	const policyDocument = generatePolicyDocument(effect,methodArn)
-	return {
-		principalId,
-		policyDocument
+	const Effect = token === secret ? "Allow" : "Deny"
+
+	const response = {
+		principalId: "username@example.com",
+		policyDocument: {
+			Version: '2012-10-17',
+			Statement: [{
+				Effect,
+				Action: 'execute-api:Invoke',
+				Resource: methodArn
+			}]
+		},
 	}
-}
+	
+	// console.log(`RESPONSE:`, JSON.stringify(response, null, 4))
 
-function generatePolicyDocument(effect:any, methodArn: any){
-	if(!effect || !methodArn) return null
-
-	const policyDocument = {
-		Version: '2012-10-17',
-		Statement: [{
-			Action: 'execute-api: Invoke',
-			effect: effect,
-			Resource: methodArn
-		}]
-	}
-
-	return policyDocument
+	return response
 }
