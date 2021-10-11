@@ -3,7 +3,6 @@ const aws = require('aws-sdk')
 aws.config.update({region: 'eu-west-2'})
 const {DynamoDB} = aws
 const TableName = process.env.TABLE_NAME
-// import * as apigateway from '@aws-cdk/aws-apigateway';
 
 const mimeTypes: any = {
 	"webp": "image/webp",
@@ -50,16 +49,14 @@ exports.handler = async function(event:any, context:any) {
 }
 
 const sendRes = (status:any, body:any, contentType="txt") => {
-	// set headers for cache
-	// Serve with appropriate mime type
 	const response = {
 		statusCode: status,
-		// contentHandling: apigateway.ContentHandling.CONVERT_TO_BINARY,
 		headers: {
-			"Content-Type": mimeTypes[contentType]
+			"Content-Type": mimeTypes[contentType],
+			"Cache-Control": status===200 ? "private, immutable, max-age=3600;" : "no-store"
 		},
 		body,
-		isBase64Encoded: true
+		isBase64Encoded: status===200,
 	}
 	return response
 }

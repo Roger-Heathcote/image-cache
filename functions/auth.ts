@@ -7,7 +7,7 @@ interface authLambdaProps {
 exports.handler = async function(event: authLambdaProps){
 
 	const token = event.authorizationToken
-	const secret = "Bearer " + "FORTS"
+	const secret = "Bearer " + "PARMALADEBARSECHOPS"
 	const methodArn = event.methodArn
 
 	// console.log(`TOKEN:${token}, SECRET:${secret}, TOKEN===SECRET:${token===secret}`)
@@ -16,8 +16,9 @@ exports.handler = async function(event: authLambdaProps){
 
 	const Effect = token === secret ? "Allow" : "Deny"
 
+	// What difference does principalId make???
 	const response = {
-		principalId: "username@example.com",
+		principalId: "usergnome@example.com",
 		policyDocument: {
 			Version: '2012-10-17',
 			Statement: [{
