@@ -1,12 +1,12 @@
-import * as cdk from '@aws-cdk/core';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as dynamodb from '@aws-cdk/aws-dynamodb';
-import * as apigateway from '@aws-cdk/aws-apigateway';
-// import { Authorizer } from '@aws-cdk/aws-apigateway';
+import * as cdk from '@aws-cdk/core'
+import * as ssm from '@aws-cdk/aws-ssm'
+import * as lambda from '@aws-cdk/aws-lambda'
+import * as dynamodb from '@aws-cdk/aws-dynamodb'
+import * as apigateway from '@aws-cdk/aws-apigateway'
 
 export class ImageCacheStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+    super(scope, id, props)
 
     // DATABASE
 
@@ -18,6 +18,17 @@ export class ImageCacheStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       tableName
     })
+
+    // PARAM STORE
+
+    const icparam = ssm.StringParameter.fromStringParameterAttributes(
+      this,
+      'icparam',
+      {
+        parameterName: "icparam",
+        simpleName: true,
+      }
+    )
     
     // LAMBDAS
 
@@ -25,6 +36,9 @@ export class ImageCacheStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_14_X,
       code: lambda.Code.fromAsset("functions"),
       handler: "auth.handler",
+      environment: {
+        IC_PARAM: icparam.stringValue
+      }
     })
 
     const addLambda = new lambda.Function(this, "addLambdaHandler", {
@@ -32,7 +46,7 @@ export class ImageCacheStack extends cdk.Stack {
       code: lambda.Code.fromAsset("functions"),
       handler: "add.handler",
       environment: {
-        TABLE_NAME: tableName
+        TABLE_NAME: tableName,
       }
     })
 
@@ -113,6 +127,12 @@ export class ImageCacheStack extends cdk.Stack {
     new cdk.CfnOutput(this, "API URL", {
       value: api.url ?? "Deploy problems"
     })
+
+    new cdk.CfnOutput(this, 'IMAGE CACHE SECRET', {
+      value: icparam.stringValue
+    })
+
+
 
   }
 }

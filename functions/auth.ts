@@ -5,20 +5,15 @@ interface authLambdaProps {
 }
 
 exports.handler = async function(event: authLambdaProps){
-
+	const secret = process.env.IC_PARAM || ""
 	const token = event.authorizationToken
-	const secret = "Bearer " + "PARMALADEBARSECHOPS"
 	const methodArn = event.methodArn
-
-	// console.log(`TOKEN:${token}, SECRET:${secret}, TOKEN===SECRET:${token===secret}`)
-	// console.log(`TY_TOKEN:${typeof token}, TY_SECRET:${typeof secret}`)
-	// console.log(`LEN_TOKEN:${token?.length}, LEN_SECRET:${secret?.length}`)
-
-	const Effect = token === secret ? "Allow" : "Deny"
+	const authOK = secret.length && (token === "Bearer " + secret)
+	const Effect = authOK ? "Allow" : "Deny"
 
 	// What difference does principalId make???
 	const response = {
-		principalId: "usergnome@example.com",
+		principalId: "fartdinkle@example.com",
 		policyDocument: {
 			Version: '2012-10-17',
 			Statement: [{
@@ -28,8 +23,6 @@ exports.handler = async function(event: authLambdaProps){
 			}]
 		},
 	}
-	
-	// console.log(`RESPONSE:`, JSON.stringify(response, null, 4))
 
 	return response
 }

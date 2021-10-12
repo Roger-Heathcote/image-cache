@@ -45,7 +45,6 @@ exports.handler = async function(event:any) {
 
 const sendRes = (status:any, body:any) => {
 	
-	console.log("555555555555555555555555555555555555555555555")
 	const response = {
 		statusCode: status,
 		headers: {
