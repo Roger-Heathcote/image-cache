@@ -12,11 +12,10 @@ const mimeTypes: any = {
 	"txt": "text/plain"
 }
 
-
 exports.handler = async function(event:any, context:any) {
-	console.log("WooHoo! GET handler ran", )
+
+	console.log("GET handler ran", )
 	const {file} = event.pathParameters
-	// return sendRes(200, JSON.stringify([event, context], null, 4))
 	
 	if(file?.length < 67) return sendRes(400, "Too short")
 	const id = file.slice(0,64)
@@ -24,7 +23,6 @@ exports.handler = async function(event:any, context:any) {
 	const ext = file.slice(65)
 	if(false === /^webp$|^png$|^jpg$|^jpeg$|^txt$/.test(ext)) return sendRes(400, "Bad ext format")
 	
-	// Lookup record
 	const db = new DynamoDB.DocumentClient()
 	const response = await db.get({
 		TableName,
@@ -32,13 +30,7 @@ exports.handler = async function(event:any, context:any) {
 	}).promise()
 	const record = response?.Item
 
-	// Fail if not found
-	if(!record) return sendRes(400, "No result")
-
-	const reply = JSON.stringify(record, null, 4)
-	console.log("reply:", response)
-	
-	// Fail if ext doesn't match
+	if(!record) return sendRes(400, "No result found")
 	if(record?.type !== ext) return sendRes(400, "Bad ext")
 
 	return sendRes(
@@ -53,7 +45,7 @@ const sendRes = (status:any, body:any, contentType="txt") => {
 		statusCode: status,
 		headers: {
 			"Content-Type": mimeTypes[contentType],
-			"Cache-Control": status===200 ? "private, immutable, max-age=3600;" : "no-store"
+			"Cache-Control": status===200 ? "private, immutable, max-age=3600" : "no-store"
 		},
 		body,
 		isBase64Encoded: status===200,

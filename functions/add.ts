@@ -6,7 +6,7 @@ const crypto = require('crypto')
 const TableName = process.env.TABLE_NAME
 
 exports.handler = async function(event:any) {
-	console.log("WooHoo! add handler ran")
+	console.log("Add handler ran")
 	
 	if(event.body === null) return sendRes(400, "Missing POST body")	
 	try {
@@ -15,13 +15,13 @@ exports.handler = async function(event:any) {
 	} catch {
 		return sendRes(400, "POST body is not valid JSON")
 	}
-	
-	if(!body.type || !body.data) return sendRes(400, "Missing type or data param")
-	
+
+	if(!body?.type || !body?.data) return sendRes(400, "Missing or falsy type or data param")
+
 	if(["webm", "png", "jpg", "jpeg", "txt"].includes(body.type) === false) return sendRes(
 		415, `Unsupported media format ${body.type}`
-		)
-	
+	)
+
 	if(body.data.length < 6) return sendRes(415, "Unsupported media format - too short")
 	if(body.data.length > 100000) return sendRes(415, "Unsupported media format - too long")
 
@@ -39,7 +39,7 @@ exports.handler = async function(event:any) {
 		TableName,
 		Item
 	}).promise()
-	
+
 	return sendRes(200, `${Item.id}.${Item.type}`)
 }
 

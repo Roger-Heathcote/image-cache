@@ -9,6 +9,8 @@ export class ImageCacheStack extends cdk.Stack {
     super(scope, id, props)
 
     // DATABASE
+    // DATABASE
+    // DATABASE
 
     const tableName = "imagecache"
 
@@ -19,26 +21,14 @@ export class ImageCacheStack extends cdk.Stack {
       tableName
     })
 
-    // PARAM STORE
-
-    const icparam = ssm.StringParameter.fromStringParameterAttributes(
-      this,
-      'icparam',
-      {
-        parameterName: "icparam",
-        simpleName: true,
-      }
-    )
-    
+    // LAMBDAS
+    // LAMBDAS
     // LAMBDAS
 
     const authLambda = new lambda.Function(this, "authLambdaHandler", {
       runtime: lambda.Runtime.NODEJS_14_X,
       code: lambda.Code.fromAsset("functions"),
       handler: "auth.handler",
-      environment: {
-        IC_PARAM: icparam.stringValue
-      }
     })
 
     const addLambda = new lambda.Function(this, "addLambdaHandler", {
@@ -65,11 +55,28 @@ export class ImageCacheStack extends cdk.Stack {
       handler: "test.handler"
     })
 
-    // DATABASE PERMISSIONS
+    // PERMISSIONS
+    // PERMISSIONS
+    // PERMISSIONS
+
     table.grantReadWriteData(addLambda)
     table.grantReadWriteData(getLambda)
 
+    const icsecret = ssm.StringParameter.fromSecureStringParameterAttributes (
+      this,
+      'icsecret',
+      {
+        parameterName: "icsecret",
+        simpleName: true,
+        version: 1
+      }
+    )
+    icsecret.grantRead(authLambda)
+
     // API
+    // API
+    // API
+
     const api = new apigateway.RestApi(this, "image-cache-api", {
       restApiName: "image cache",
       description: "Caches images and serve with very long expiry",
@@ -81,13 +88,9 @@ export class ImageCacheStack extends cdk.Stack {
             throttlingRateLimit: 1
           },
           '/ImageCacheStack/POST': {
-            throttlingBurstLimit: 1,
+            throttlingBurstLimit: 3,
             throttlingRateLimit: 1
-          },
-          '/ImageCacheStack/PUT': {
-            throttlingBurstLimit: 1,
-            throttlingRateLimit: 1
-          },
+          }
         }
       }
     })
@@ -107,7 +110,6 @@ export class ImageCacheStack extends cdk.Stack {
       authorizer: addAuth
     }
     add.addMethod("POST", new apigateway.LambdaIntegration(addLambda), addMethodOptions)
-    // add.addMethod("POST", new apigateway.LambdaIntegration(addLambda), addOptions)
     // To convert binary to b64 here add an options object as second parameter to .lambdaIntegration
     // { contentHandling: apigateway.ContentHandling.CONVERT_TO_TEXT }
 
@@ -124,15 +126,12 @@ export class ImageCacheStack extends cdk.Stack {
 
 
     // TERMINAL OUTPUT
+    // TERMINAL OUTPUT
+    // TERMINAL OUTPUT
+
     new cdk.CfnOutput(this, "API URL", {
       value: api.url ?? "Deploy problems"
     })
-
-    new cdk.CfnOutput(this, 'IMAGE CACHE SECRET', {
-      value: icparam.stringValue
-    })
-
-
 
   }
 }

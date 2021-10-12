@@ -1,11 +1,21 @@
+const aws = require('aws-sdk')
+const ssm = new aws.SSM()
+
 interface authLambdaProps {
 	type: string,
 	authorizationToken: string
 	methodArn: string
 }
 
+async function getSecret() {
+    const params = {Name: 'icsecret', WithDecryption: true}
+    const result = await ssm.getParameter(params).promise()
+    return result.Parameter.Value || ""
+}
+
 exports.handler = async function(event: authLambdaProps){
-	const secret = process.env.IC_PARAM || ""
+
+	const secret = await getSecret()
 	const token = event.authorizationToken
 	const methodArn = event.methodArn
 	const authOK = secret.length && (token === "Bearer " + secret)
@@ -13,7 +23,7 @@ exports.handler = async function(event: authLambdaProps){
 
 	// What difference does principalId make???
 	const response = {
-		principalId: "fartdinkle@example.com",
+		principalId: "monkeyfunk@example.com",
 		policyDocument: {
 			Version: '2012-10-17',
 			Statement: [{
