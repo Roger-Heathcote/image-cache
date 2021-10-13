@@ -49,6 +49,15 @@ export class ImageCacheStack extends cdk.Stack {
       }
     })
 
+    const dlLambda = new lambda.Function(this, "dlLambdaHandler", {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      code: lambda.Code.fromAsset("functions"),
+      handler: "dl.handler",
+      environment: {
+        TABLE_NAME: tableName,
+      }
+    })
+
     const getLambda = new lambda.Function(this, "getLambdaHandler", {
       runtime: lambda.Runtime.NODEJS_14_X,
       code: lambda.Code.fromAsset("functions"),
@@ -70,6 +79,7 @@ export class ImageCacheStack extends cdk.Stack {
 
     table.grantReadWriteData(addLambda)
     table.grantReadWriteData(addBinLambda)
+    table.grantReadWriteData(dlLambda)
     table.grantReadData(getLambda)
 
     const icsecret = ssm.StringParameter.fromSecureStringParameterAttributes (
@@ -131,6 +141,16 @@ export class ImageCacheStack extends cdk.Stack {
     addBin.addMethod("POST", new apigateway.LambdaIntegration(addBinLambda, addBinOptions), addMethodOptions)
 
 
+    // DL
+    const dl = api.root.addResource("dl")
+    const dlAuth = new apigateway.TokenAuthorizer(this, 'dlAuthorizer', {
+      handler: authLambda
+    })
+    const dlMethodOptions = {
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
+      authorizer: dlAuth
+    }
+    dl.addMethod("POST", new apigateway.LambdaIntegration(dlLambda), dlMethodOptions)
 
 
     // GET
