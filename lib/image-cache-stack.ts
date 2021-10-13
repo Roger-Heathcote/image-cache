@@ -40,6 +40,15 @@ export class ImageCacheStack extends cdk.Stack {
       }
     })
 
+    const addBinLambda = new lambda.Function(this, "addBinLambdaHandler", {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      code: lambda.Code.fromAsset("functions"),
+      handler: "addbin.handler",
+      environment: {
+        TABLE_NAME: tableName,
+      }
+    })
+
     const getLambda = new lambda.Function(this, "getLambdaHandler", {
       runtime: lambda.Runtime.NODEJS_14_X,
       code: lambda.Code.fromAsset("functions"),
@@ -60,7 +69,8 @@ export class ImageCacheStack extends cdk.Stack {
     // PERMISSIONS
 
     table.grantReadWriteData(addLambda)
-    table.grantReadWriteData(getLambda)
+    table.grantReadWriteData(addBinLambda)
+    table.grantReadData(getLambda)
 
     const icsecret = ssm.StringParameter.fromSecureStringParameterAttributes (
       this,
@@ -112,6 +122,16 @@ export class ImageCacheStack extends cdk.Stack {
     add.addMethod("POST", new apigateway.LambdaIntegration(addLambda), addMethodOptions)
     // To convert binary to b64 here add an options object as second parameter to .lambdaIntegration
     // { contentHandling: apigateway.ContentHandling.CONVERT_TO_TEXT }
+    
+
+
+    // ADDBIN
+    const addBin = add.addResource("{type}")
+    const addBinOptions = { contentHandling: apigateway.ContentHandling.CONVERT_TO_TEXT }
+    addBin.addMethod("POST", new apigateway.LambdaIntegration(addBinLambda, addBinOptions), addMethodOptions)
+
+
+
 
     // GET
     const get = api.root.addResource("get")

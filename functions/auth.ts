@@ -1,11 +1,10 @@
+import {
+	APIGatewayTokenAuthorizerEvent as TAE,
+	APIGatewayAuthorizerResult as GAR
+} from "aws-lambda"
+
 const aws = require('aws-sdk')
 const ssm = new aws.SSM()
-
-interface authLambdaProps {
-	type: string,
-	authorizationToken: string
-	methodArn: string
-}
 
 async function getSecret() {
     const params = {Name: 'icsecret', WithDecryption: true}
@@ -13,7 +12,7 @@ async function getSecret() {
     return result.Parameter.Value || ""
 }
 
-exports.handler = async function(event: authLambdaProps){
+exports.handler = async function(event: TAE): Promise<GAR>{
 
 	const secret = await getSecret()
 	const token = event.authorizationToken

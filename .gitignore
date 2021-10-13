@@ -11,3 +11,6 @@ cdk.out
 
 # Private environment variables
 .env
+
+# temp files from upload tester
+payload.webp

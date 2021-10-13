@@ -1,4 +1,9 @@
 export {} // Tell TS we want module scoping
+import {
+	APIGatewayProxyEvent as GPE,
+	APIGatewayProxyResult as GPR
+} from "aws-lambda"
+
 const aws = require('aws-sdk')
 aws.config.update({region: 'eu-west-2'})
 const {DynamoDB} = aws
@@ -12,11 +17,10 @@ const mimeTypes: any = {
 	"txt": "text/plain"
 }
 
-exports.handler = async function(event:any, context:any) {
-
+exports.handler = async function(event:GPE): Promise<GPR> {
 	console.log("GET handler ran", )
-	const {file} = event.pathParameters
-	
+	const file = event.pathParameters?.file || ""
+	if(!file) return sendRes(400, "No param")
 	if(file?.length < 67) return sendRes(400, "Too short")
 	const id = file.slice(0,64)
 	if(false === /^[0-9a-f]{64}$/.test(id)) return sendRes(400, "Bad ID format")
@@ -40,8 +44,8 @@ exports.handler = async function(event:any, context:any) {
 	)
 }
 
-const sendRes = (status:any, body:any, contentType="txt") => {
-	const response = {
+const sendRes = (status:number, body:any, contentType="txt") => {
+	const response: GPR = {
 		statusCode: status,
 		headers: {
 			"Content-Type": mimeTypes[contentType],
