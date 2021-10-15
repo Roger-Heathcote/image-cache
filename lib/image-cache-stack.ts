@@ -49,8 +49,11 @@ export class ImageCacheStack extends cdk.Stack {
       }
     })
 
+    const gmLayerArn = "arn:aws:lambda:eu-west-2:703300139815:layer:myimagemagicklayer:1" // My one
+    const gmLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'gmLayer', gmLayerArn)
     const dlLambda = new lambda.Function(this, "dlLambdaHandler", {
-      runtime: lambda.Runtime.NODEJS_14_X,
+      layers: [gmLayer],
+      runtime: lambda.Runtime.NODEJS_12_X,
       code: lambda.Code.fromAsset("functions"),
       handler: "dl.handler",
       environment: {
@@ -119,7 +122,6 @@ export class ImageCacheStack extends cdk.Stack {
     const test = api.root.addResource("test")
     test.addMethod("GET", new apigateway.LambdaIntegration(testLambda))
 
-
     // ADD
     const add = api.root.addResource("add")
     const addAuth = new apigateway.TokenAuthorizer(this, 'addAuthorizer', {
@@ -130,16 +132,11 @@ export class ImageCacheStack extends cdk.Stack {
       authorizer: addAuth
     }
     add.addMethod("POST", new apigateway.LambdaIntegration(addLambda), addMethodOptions)
-    // To convert binary to b64 here add an options object as second parameter to .lambdaIntegration
-    // { contentHandling: apigateway.ContentHandling.CONVERT_TO_TEXT }
-    
-
 
     // ADDBIN
     const addBin = add.addResource("{type}")
     const addBinOptions = { contentHandling: apigateway.ContentHandling.CONVERT_TO_TEXT }
     addBin.addMethod("POST", new apigateway.LambdaIntegration(addBinLambda, addBinOptions), addMethodOptions)
-
 
     // DL
     const dl = api.root.addResource("dl")
@@ -151,7 +148,6 @@ export class ImageCacheStack extends cdk.Stack {
       authorizer: dlAuth
     }
     dl.addMethod("POST", new apigateway.LambdaIntegration(dlLambda), dlMethodOptions)
-
 
     // GET
     const get = api.root.addResource("get")

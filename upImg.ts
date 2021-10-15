@@ -14,7 +14,7 @@ function convDone(err:any){
 	if(err) throw err
 	const fileData = fs.readFileSync(`${__dirname}/payload.webp`)
 	console.log(Buffer.byteLength(fileData), "bytes of binary data read.")
-	console.log(fileData.toString('base64').length, "bytes as b64 string.")
+	console.log(fileData.length, "bytes as b64 string.")
 
 	axios.post(`${addEndpoint}/webp`, fileData, {
 		headers: {

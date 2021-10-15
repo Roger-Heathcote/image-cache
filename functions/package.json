@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/aws-lambda": "^8.10.84",
-    "axios": "^0.23.0"
+    "axios": "^0.23.0",
+    "gm": "^1.23.1"
   }
 }
