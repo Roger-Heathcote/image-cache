@@ -8,6 +8,7 @@ const aws = require('aws-sdk')
 aws.config.update({region: 'eu-west-2'})
 const {DynamoDB} = aws
 const TableName = process.env.TABLE_NAME
+const cacheLength = process.env.CACHE_LENGTH || "3600"
 
 const mimeTypes: any = {
 	"webp": "image/webp",
@@ -49,7 +50,7 @@ const sendRes = (status:number, body:any, contentType="txt") => {
 		statusCode: status,
 		headers: {
 			"Content-Type": mimeTypes[contentType],
-			"Cache-Control": status===200 ? "private, immutable, max-age=3600" : "no-store"
+			"Cache-Control": status===200 ? `private, immutable, max-age=${cacheLength}` : "no-store"
 		},
 		body,
 		isBase64Encoded: status===200,

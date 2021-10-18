@@ -12,11 +12,14 @@ const axios= require('axios')
 const {DynamoDB} = aws
 const crypto = require('crypto')
 const TableName = process.env.TABLE_NAME
+const maxRawFileSize = Number(process.env.MAX_RAW_FILE_SIZE) || 2000000
+const maxCookedFileSize = process.env.MAX_COOKED_FILE_SIZE || 350000
+const resizeDefault = Number(process.env.RESIZE_DEFAULT)
 
 function resize(buffer:Buffer, fileName:string): Promise<Buffer> {
 	return new Promise((resolve, reject) => {
 		gm(buffer, fileName)
-		.resize(128) // Make this a paramstore param
+		.resize(resizeDefault)
 		.setFormat('webp')
 		.toBuffer(
 			function(error:any, outputBuffer:Buffer){
@@ -52,17 +55,19 @@ exports.handler = async function(event:GPE) {
 
 	const responseObject = await axios.get(url, {responseType: 'arraybuffer'})
 	const fileBuffer = responseObject.data
-	const fileSize = Buffer.byteLength(fileBuffer)
-	console.log(`Input image fileSize: ${fileSize} bytes.`)
+	const rawFileSize = Buffer.byteLength(fileBuffer)
+	console.log(`Input image rawFileSize: ${rawFileSize} bytes.`)
 
-	if(fileSize < 6) return sendRes(415, "Unsupported media format - too short")
-	if(fileSize > 1000000) return sendRes(415, "Unsupported media format - too long")
-
+	if(rawFileSize < 6) return sendRes(415, "Unsupported media format - too short")
+	if(rawFileSize > maxRawFileSize) return sendRes(415, "Unsupported media format - raw file too long")
+	
 	try {
 		console.log("About to resize", fileType)
 		const processedBuffer = await resize(fileBuffer, fileType)
 		console.log("Resize complete!")
-		console.log('Processed buffer size', processedBuffer.byteLength)
+		const cookedFileSize = processedBuffer.byteLength
+		console.log('Processed buffer size', cookedFileSize)
+		if(cookedFileSize > maxCookedFileSize) return sendRes(415, "Unsupported media format - cooked file too long")
 
 		const base64String = processedBuffer.toString('base64')
 

@@ -5,169 +5,191 @@ import * as dynamodb from '@aws-cdk/aws-dynamodb'
 import * as apigateway from '@aws-cdk/aws-apigateway'
 
 export class ImageCacheStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
-    super(scope, id, props)
+	constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+		super(scope, id, props)
 
-    // DATABASE
-    // DATABASE
-    // DATABASE
+		// PARAMS
+		// PARAMS
+		// PARAMS
 
-    const tableName = "imagecache"
+		const icsecret = ssm.StringParameter.fromSecureStringParameterAttributes (
+			this, 'icsecret', {parameterName: "/imagecache/secret", version: 1}
+		)
+		const resizeDefault = ssm.StringParameter.fromStringParameterAttributes(
+			this, 'resizeDefault', {parameterName: "/imagecache/resizeDefault"}
+		)
+		const maxRawFileSize = ssm.StringParameter.fromStringParameterAttributes(
+			this, 'maxRawFileSize', {parameterName: "/imagecache/maxRawFileSize"}
+		)
+		const maxCookedFileSize = ssm.StringParameter.fromStringParameterAttributes(
+			this, 'maxCookedFileSize', {parameterName: "/imagecache/maxCookedFileSize"}
+		)
+		const cacheLength = ssm.StringParameter.fromStringParameterAttributes(
+			this, 'cacheLength', {parameterName: "/imagecache/cacheLength"}
+		)
 
-    const table = new dynamodb.Table(this, tableName, {
-      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      tableName
-    })
+		// DATABASE
+		// DATABASE
+		// DATABASE
 
-    // LAMBDAS
-    // LAMBDAS
-    // LAMBDAS
+		const tableName = "imagecache"
 
-    const authLambda = new lambda.Function(this, "authLambdaHandler", {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      code: lambda.Code.fromAsset("functions"),
-      handler: "auth.handler",
-    })
+		const table = new dynamodb.Table(this, tableName, {
+			partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+			billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+			removalPolicy: cdk.RemovalPolicy.DESTROY,
+			tableName
+		})
 
-    const addLambda = new lambda.Function(this, "addLambdaHandler", {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      code: lambda.Code.fromAsset("functions"),
-      handler: "add.handler",
-      environment: {
-        TABLE_NAME: tableName,
-      }
-    })
+		// LAMBDAS
+		// LAMBDAS
+		// LAMBDAS
 
-    const addBinLambda = new lambda.Function(this, "addBinLambdaHandler", {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      code: lambda.Code.fromAsset("functions"),
-      handler: "addbin.handler",
-      environment: {
-        TABLE_NAME: tableName,
-      }
-    })
+		const authLambda = new lambda.Function(this, "authLambdaHandler", {
+			runtime: lambda.Runtime.NODEJS_14_X,
+			code: lambda.Code.fromAsset("functions"),
+			handler: "auth.handler",
+		})
 
-    const gmLayerArn = "arn:aws:lambda:eu-west-2:703300139815:layer:myimagemagicklayer:1" // My one
-    const gmLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'gmLayer', gmLayerArn)
-    const dlLambda = new lambda.Function(this, "dlLambdaHandler", {
-      layers: [gmLayer],
-      runtime: lambda.Runtime.NODEJS_12_X,
-      code: lambda.Code.fromAsset("functions"),
-      handler: "dl.handler",
-      environment: {
-        TABLE_NAME: tableName,
-      }
-    })
+		const addLambda = new lambda.Function(this, "addLambdaHandler", {
+			runtime: lambda.Runtime.NODEJS_14_X,
+			code: lambda.Code.fromAsset("functions"),
+			handler: "add.handler",
+			environment: {
+				TABLE_NAME: tableName,
+			}
+		})
 
-    const getLambda = new lambda.Function(this, "getLambdaHandler", {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      code: lambda.Code.fromAsset("functions"),
-      handler: "get.handler",
-      environment: {
-        TABLE_NAME: tableName
-      }
-    })
+		const addBinLambda = new lambda.Function(this, "addBinLambdaHandler", {
+			runtime: lambda.Runtime.NODEJS_14_X,
+			code: lambda.Code.fromAsset("functions"),
+			handler: "addbin.handler",
+			environment: {
+				TABLE_NAME: tableName,
+			}
+		})
 
-    const testLambda = new lambda.Function(this, "testLambdaHandler", {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      code: lambda.Code.fromAsset("functions"),
-      handler: "test.handler"
-    })
+		// Layer built by following: https://github.com/serverlesspub/imagemagick-aws-lambda-2
+		const gmLayerArn = "arn:aws:lambda:eu-west-2:703300139815:layer:myimagemagicklayer:1" // My one
+		const gmLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'gmLayer', gmLayerArn)
+		const dlLambda = new lambda.Function(this, "dlLambdaHandler", {
+			layers: [gmLayer],
+			runtime: lambda.Runtime.NODEJS_14_X,
+			code: lambda.Code.fromAsset("functions"),
+			handler: "dl.handler",
+			environment: {
+				TABLE_NAME: tableName,
+				RESIZE_DEFAULT: resizeDefault.stringValue,
+				MAX_RAW_FILE_SIZE: maxRawFileSize.stringValue,
+				MAX_COOKED_FILE_SIZE: maxCookedFileSize.stringValue
+			}
+		})
 
-    // PERMISSIONS
-    // PERMISSIONS
-    // PERMISSIONS
+		const getLambda = new lambda.Function(this, "getLambdaHandler", {
+			runtime: lambda.Runtime.NODEJS_14_X,
+			code: lambda.Code.fromAsset("functions"),
+			handler: "get.handler",
+			environment: {
+				TABLE_NAME: tableName,
+				CACHE_LENGTH: cacheLength.stringValue
+			}
+		})
 
-    table.grantReadWriteData(addLambda)
-    table.grantReadWriteData(addBinLambda)
-    table.grantReadWriteData(dlLambda)
-    table.grantReadData(getLambda)
+		const testLambda = new lambda.Function(this, "testLambdaHandler", {
+			runtime: lambda.Runtime.NODEJS_14_X,
+			code: lambda.Code.fromAsset("functions"),
+			handler: "test.handler"
+		})
 
-    const icsecret = ssm.StringParameter.fromSecureStringParameterAttributes (
-      this,
-      'icsecret',
-      {
-        parameterName: "icsecret",
-        simpleName: true,
-        version: 1
-      }
-    )
-    icsecret.grantRead(authLambda)
+		// PERMISSIONS
+		// PERMISSIONS
+		// PERMISSIONS
 
-    // API
-    // API
-    // API
+		table.grantReadWriteData(addLambda)
+		table.grantReadWriteData(addBinLambda)
+		table.grantReadWriteData(dlLambda)
+		table.grantReadData(getLambda)
 
-    const api = new apigateway.RestApi(this, "image-cache-api", {
-      restApiName: "image cache",
-      description: "Caches images and serve with very long expiry",
-      binaryMediaTypes: ["*/*"],
-      deployOptions: {
-        methodOptions: {
-          '/*/*': {
-            throttlingBurstLimit: 30,
-            throttlingRateLimit: 1
-          },
-          '/ImageCacheStack/POST': {
-            throttlingBurstLimit: 3,
-            throttlingRateLimit: 1
-          }
-        }
-      }
-    })
+		icsecret.grantRead(authLambda)
 
-    // TEST
-    const test = api.root.addResource("test")
-    test.addMethod("GET", new apigateway.LambdaIntegration(testLambda))
+		// resizeDefault.grantRead(addLambda)
 
-    // ADD
-    const add = api.root.addResource("add")
-    const addAuth = new apigateway.TokenAuthorizer(this, 'addAuthorizer', {
-      handler: authLambda
-    })
-    const addMethodOptions = {
-      authorizationType: apigateway.AuthorizationType.CUSTOM,
-      authorizer: addAuth
-    }
-    add.addMethod("POST", new apigateway.LambdaIntegration(addLambda), addMethodOptions)
+		// API
+		// API
+		// API
 
-    // ADDBIN
-    const addBin = add.addResource("{type}")
-    const addBinOptions = { contentHandling: apigateway.ContentHandling.CONVERT_TO_TEXT }
-    addBin.addMethod("POST", new apigateway.LambdaIntegration(addBinLambda, addBinOptions), addMethodOptions)
+		const api = new apigateway.RestApi(this, "image-cache-api", {
+			restApiName: "image cache",
+			description: "Caches images and serve with very long expiry",
+			binaryMediaTypes: ["*/*"],
+			deployOptions: {
+				methodOptions: {
+					'/*/*': {
+						throttlingBurstLimit: 30,
+						throttlingRateLimit: 1
+					},
+					'/ImageCacheStack/POST': {
+						throttlingBurstLimit: 3,
+						throttlingRateLimit: 1
+					}
+				}
+			}
+		})
 
-    // DL
-    const dl = api.root.addResource("dl")
-    const dlAuth = new apigateway.TokenAuthorizer(this, 'dlAuthorizer', {
-      handler: authLambda
-    })
-    const dlMethodOptions = {
-      authorizationType: apigateway.AuthorizationType.CUSTOM,
-      authorizer: dlAuth
-    }
-    dl.addMethod("POST", new apigateway.LambdaIntegration(dlLambda), dlMethodOptions)
+		// TEST
+		const test = api.root.addResource("test")
+		test.addMethod("GET", new apigateway.LambdaIntegration(testLambda))
 
-    // GET
-    const get = api.root.addResource("get")
-    const getWithId = get.addResource("{file}")
-    const getIntegrationOptions = {
-      contentHandling: apigateway.ContentHandling.CONVERT_TO_BINARY
-    }
-    getWithId.addMethod("GET", new apigateway.LambdaIntegration(
-      getLambda,
-      getIntegrationOptions
-    ))
+		// ADD
+		const add = api.root.addResource("add")
+		const addAuth = new apigateway.TokenAuthorizer(this, 'addAuthorizer', {
+			handler: authLambda
+		})
+		const addMethodOptions = {
+			authorizationType: apigateway.AuthorizationType.CUSTOM,
+			authorizer: addAuth
+		}
+		add.addMethod("POST", new apigateway.LambdaIntegration(addLambda), addMethodOptions)
+
+		// ADDBIN
+		const addBin = add.addResource("{type}")
+		const addBinOptions = { contentHandling: apigateway.ContentHandling.CONVERT_TO_TEXT }
+		addBin.addMethod("POST", new apigateway.LambdaIntegration(addBinLambda, addBinOptions), addMethodOptions)
+
+		// DL
+		const dl = api.root.addResource("dl")
+		const dlAuth = new apigateway.TokenAuthorizer(this, 'dlAuthorizer', {
+			handler: authLambda
+		})
+		const dlMethodOptions = {
+			authorizationType: apigateway.AuthorizationType.CUSTOM,
+			authorizer: dlAuth
+		}
+		dl.addMethod("POST", new apigateway.LambdaIntegration(dlLambda), dlMethodOptions)
+
+		// GET
+		const get = api.root.addResource("get")
+		const getWithId = get.addResource("{file}")
+		const getIntegrationOptions = {
+			contentHandling: apigateway.ContentHandling.CONVERT_TO_BINARY
+		}
+		getWithId.addMethod("GET", new apigateway.LambdaIntegration(
+			getLambda,
+			getIntegrationOptions
+		))
 
 
-    // TERMINAL OUTPUT
-    // TERMINAL OUTPUT
-    // TERMINAL OUTPUT
+		// TERMINAL OUTPUT
+		// TERMINAL OUTPUT
+		// TERMINAL OUTPUT
 
-    new cdk.CfnOutput(this, "API URL", {
-      value: api.url ?? "Deploy problems"
-    })
+		new cdk.CfnOutput(this, "API URL", {
+			value: api.url ?? "Deploy problems"
+		})
 
-  }
+		new cdk.CfnOutput(this, 'IMAGE CACHE RESIZE DEFAULT', {
+			value: resizeDefault.stringValue
+		})
+
+	}
 }

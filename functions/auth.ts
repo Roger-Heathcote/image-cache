@@ -7,9 +7,9 @@ const aws = require('aws-sdk')
 const ssm = new aws.SSM()
 
 async function getSecret() {
-    const params = {Name: 'icsecret', WithDecryption: true}
-    const result = await ssm.getParameter(params).promise()
-    return result.Parameter.Value || ""
+	const params = {Name: '/imagecache/secret', WithDecryption: true}
+	const result = await ssm.getParameter(params).promise()
+	return result.Parameter.Value || ""
 }
 
 exports.handler = async function(event: TAE): Promise<GAR>{
