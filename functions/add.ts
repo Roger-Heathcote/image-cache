@@ -10,7 +10,7 @@ const crypto = require('crypto')
 const TableName = process.env.TABLE_NAME
 
 exports.handler = async function(event:GPE): Promise<GPR>{
-	console.log("Addbin handler ran")
+	console.log("Add handler ran")
 	
 	if(event.body === null) return sendRes(400, "Missing POST body")	
 
