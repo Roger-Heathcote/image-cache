@@ -27,7 +27,7 @@ function resize(buffer:Buffer, fileName:string): Promise<Buffer> {
 					console.log("ERRTYPE:", error.errorMessage)
 					return reject(error)
 				}
-				resolve(outputBuffer)
+				return resolve(outputBuffer)
 			}
 		)
 	})
@@ -45,15 +45,26 @@ exports.handler = async function(event:GPE) {
 		return sendRes(400, "POST body is not valid JSON")
 	}
 	
-	const url = body?.url || ""
-	if(!url) return sendRes(400, "Missing url")
+	const rawUrl = body?.url || ""
+	if(!rawUrl) return sendRes(400, "Missing url")
 
-	const fileType = url.split('.').pop().toLowerCase()
-	if(["webp", "png", "jpg", "jpeg", "txt"].includes(fileType) === false) return sendRes(
+	const url = rawUrl.split("?").shift() // ditch params
+
+	let fileType = url.split('.').pop().toLowerCase()
+	if(["webp", "png", "jpg", "jpeg"].includes(fileType) === false) return sendRes(
 		415, `Unsupported media format ${fileType}`
 	)
 
-	const responseObject = await axios.get(url, {responseType: 'arraybuffer'})
+	const isImage = ["webp", "png", "jpg", "jpeg"].includes(fileType)
+
+	try {
+		var responseObject = await axios.get(url, {responseType: 'arraybuffer'})
+	} catch(error) {
+		return sendRes(error.response.status, {
+			msg: JSON.stringify(error, null, 4)
+		})
+	}
+
 	const fileBuffer = responseObject.data
 	const rawFileSize = Buffer.byteLength(fileBuffer)
 	console.log(`Input image rawFileSize: ${rawFileSize} bytes.`)
@@ -62,19 +73,21 @@ exports.handler = async function(event:GPE) {
 	if(rawFileSize > maxRawFileSize) return sendRes(415, "Unsupported media format - raw file too long")
 	
 	try {
-		console.log("About to resize", fileType)
-		const processedBuffer = await resize(fileBuffer, fileType)
-		console.log("Resize complete!")
-		const cookedFileSize = processedBuffer.byteLength
-		console.log('Processed buffer size', cookedFileSize)
-		if(cookedFileSize > maxCookedFileSize) return sendRes(415, "Unsupported media format - cooked file too long")
-
-		const base64String = processedBuffer.toString('base64')
+		let processedBuffer
+		if(isImage){
+			processedBuffer = await resize(fileBuffer, fileType)
+			const cookedFileSize = processedBuffer.byteLength
+			if(cookedFileSize > maxCookedFileSize) return sendRes(415, "Unsupported media format - cooked file too long")
+			fileType = "webp"
+		}
+		processedBuffer = processedBuffer ? processedBuffer : fileBuffer
+		const base64String = processedBuffer ?.toString('base64')
 
 		const Item = {
 			id: crypto.createHash('sha256').update(`${fileType}${base64String}`).digest('hex'),
 			data: base64String,
-			type: fileType
+			type: fileType,
+			origUrl: url
 		}
 
 		const db = new DynamoDB.DocumentClient()
@@ -86,16 +99,18 @@ exports.handler = async function(event:GPE) {
 		return sendRes(200, { url: `${Item.id}.${Item.type}` })
 
 	} catch(error) {
-		return sendRes(400, {
-			error: true,
+		return sendRes(error?.status || 400, {
 			msg: JSON.stringify(error, null, 4)
 		})
 	}
 }
 
 const sendRes = (status:number, body:any) => {
+	if(status !== 200) body.error = true
+	body.code = status
+	console.log(`CODE:${body.code} STATUS:${status}`)
 	return {
-		statusCode: status,
+		statusCode: 200,
 		headers: {
 			"Content-Type": 'application/json',
 		},

@@ -60,23 +60,16 @@ export class ImageCacheStack extends cdk.Stack {
 			}
 		})
 
-		const addBinLambda = new lambda.Function(this, "addBinLambdaHandler", {
-			runtime: lambda.Runtime.NODEJS_14_X,
-			code: lambda.Code.fromAsset("functions"),
-			handler: "addbin.handler",
-			environment: {
-				TABLE_NAME: tableName,
-			}
-		})
-
 		// Layer built by following: https://github.com/serverlesspub/imagemagick-aws-lambda-2
 		const gmLayerArn = "arn:aws:lambda:eu-west-2:703300139815:layer:myimagemagicklayer:1" // My one
 		const gmLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'gmLayer', gmLayerArn)
+
 		const dlLambda = new lambda.Function(this, "dlLambdaHandler", {
 			layers: [gmLayer],
 			runtime: lambda.Runtime.NODEJS_14_X,
 			code: lambda.Code.fromAsset("functions"),
 			handler: "dl.handler",
+			timeout: cdk.Duration.seconds(15),
 			environment: {
 				TABLE_NAME: tableName,
 				RESIZE_DEFAULT: resizeDefault.stringValue,
@@ -106,7 +99,6 @@ export class ImageCacheStack extends cdk.Stack {
 		// PERMISSIONS
 
 		table.grantReadWriteData(addLambda)
-		table.grantReadWriteData(addBinLambda)
 		table.grantReadWriteData(dlLambda)
 		table.grantReadData(getLambda)
 
@@ -125,12 +117,12 @@ export class ImageCacheStack extends cdk.Stack {
 			deployOptions: {
 				methodOptions: {
 					'/*/*': {
-						throttlingBurstLimit: 30,
-						throttlingRateLimit: 1
+						throttlingBurstLimit: 50,
+						throttlingRateLimit: 10
 					},
 					'/ImageCacheStack/POST': {
-						throttlingBurstLimit: 3,
-						throttlingRateLimit: 1
+						throttlingBurstLimit: 10,
+						throttlingRateLimit: 5
 					}
 				}
 			}
@@ -141,7 +133,7 @@ export class ImageCacheStack extends cdk.Stack {
 		test.addMethod("GET", new apigateway.LambdaIntegration(testLambda))
 
 		// ADD
-		const add = api.root.addResource("add")
+		const addRoot = api.root.addResource("add")
 		const addAuth = new apigateway.TokenAuthorizer(this, 'addAuthorizer', {
 			handler: authLambda
 		})
@@ -149,12 +141,9 @@ export class ImageCacheStack extends cdk.Stack {
 			authorizationType: apigateway.AuthorizationType.CUSTOM,
 			authorizer: addAuth
 		}
-		add.addMethod("POST", new apigateway.LambdaIntegration(addLambda), addMethodOptions)
-
-		// ADDBIN
-		const addBin = add.addResource("{type}")
-		const addBinOptions = { contentHandling: apigateway.ContentHandling.CONVERT_TO_TEXT }
-		addBin.addMethod("POST", new apigateway.LambdaIntegration(addBinLambda, addBinOptions), addMethodOptions)
+		const add = addRoot.addResource("{type}")
+		const addOptions = { contentHandling: apigateway.ContentHandling.CONVERT_TO_TEXT }
+		add.addMethod("POST", new apigateway.LambdaIntegration(addLambda, addOptions), addMethodOptions)
 
 		// DL
 		const dl = api.root.addResource("dl")
