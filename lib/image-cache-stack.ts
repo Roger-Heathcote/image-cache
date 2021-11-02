@@ -1,8 +1,8 @@
 import * as cdk from '@aws-cdk/core'
-import * as ssm from '@aws-cdk/aws-ssm'
 import * as lambda from '@aws-cdk/aws-lambda'
 import * as dynamodb from '@aws-cdk/aws-dynamodb'
 import * as apigateway from '@aws-cdk/aws-apigateway'
+import {getParameters} from './getParameters'
 
 export class ImageCacheStack extends cdk.Stack {
 	constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -12,21 +12,10 @@ export class ImageCacheStack extends cdk.Stack {
 		// PARAMS
 		// PARAMS
 
-		const secret = ssm.StringParameter.fromSecureStringParameterAttributes (
-			this, 'secret', {parameterName: "/imagecache/secret", version: 1}
-		)
-		const resizeWidth = ssm.StringParameter.fromStringParameterAttributes(
-			this, 'resizeWidth', {parameterName: "/imagecache/resizeWidth"}
-		)
-		const maxRawFileSize = ssm.StringParameter.fromStringParameterAttributes(
-			this, 'maxRawFileSize', {parameterName: "/imagecache/maxRawFileSize"}
-		)
-		const maxCookedFileSize = ssm.StringParameter.fromStringParameterAttributes(
-			this, 'maxCookedFileSize', {parameterName: "/imagecache/maxCookedFileSize"}
-		)
-		const cacheLength = ssm.StringParameter.fromStringParameterAttributes(
-			this, 'cacheLength', {parameterName: "/imagecache/cacheLength"}
-		)
+		const params = getParameters(this, [
+			{name: "secret", secure: true, asObj: true},
+			"resizeWidth", "maxRawFileSize", "maxCookedFileSize", "cacheLength"
+		])
 
 		// DATABASE
 		// DATABASE
@@ -72,9 +61,9 @@ export class ImageCacheStack extends cdk.Stack {
 			timeout: cdk.Duration.seconds(15),
 			environment: {
 				TABLE_NAME: tableName,
-				RESIZE_WIDTH: resizeWidth.stringValue,
-				MAX_RAW_FILE_SIZE: maxRawFileSize.stringValue,
-				MAX_COOKED_FILE_SIZE: maxCookedFileSize.stringValue
+				RESIZE_WIDTH: params.resizeWidth,
+				MAX_RAW_FILE_SIZE: params.maxRawFileSize,
+				MAX_COOKED_FILE_SIZE: params.maxCookedFileSize
 			}
 		})
 
@@ -84,7 +73,7 @@ export class ImageCacheStack extends cdk.Stack {
 			handler: "get.handler",
 			environment: {
 				TABLE_NAME: tableName,
-				CACHE_LENGTH: cacheLength.stringValue
+				CACHE_LENGTH: params.cacheLength
 			}
 		})
 
@@ -102,7 +91,7 @@ export class ImageCacheStack extends cdk.Stack {
 		table.grantReadWriteData(dlLambda)
 		table.grantReadData(getLambda)
 
-		secret.grantRead(authLambda)
+		params.secret.grantRead(authLambda)
 
 		// resizeWidth.grantRead(addLambda)
 
@@ -177,7 +166,7 @@ export class ImageCacheStack extends cdk.Stack {
 		})
 
 		new cdk.CfnOutput(this, 'IMAGE CACHE RESIZE DEFAULT', {
-			value: resizeWidth.stringValue
+			value: params.resizeWidth
 		})
 
 	}
