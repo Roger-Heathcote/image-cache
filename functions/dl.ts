@@ -14,20 +14,17 @@ const crypto = require('crypto')
 const TableName = process.env.TABLE_NAME
 const maxRawFileSize = Number(process.env.MAX_RAW_FILE_SIZE) || 2000000
 const maxCookedFileSize = Number(process.env.MAX_COOKED_FILE_SIZE) || 350000
-const resizeDefault = Number(process.env.RESIZE_DEFAULT) || 350
+const resizeWidth = Number(process.env.RESIZE_WIDTH) || 350
 const downloadTimeout = Number(process.env.DOWNLOAD_TIMEOUT || 5000)
 
 function resize(buffer:Buffer, fileName:string): Promise<Buffer> {
 	return new Promise((resolve, reject) => {
 		gm(buffer, fileName)
-		.resize(resizeDefault)
+		.resize(resizeWidth)
 		.setFormat('webp')
 		.toBuffer(
 			function(error:any, outputBuffer:Buffer){
-				if(error){
-					console.log("ERRTYPE:", error.errorMessage)
-					return reject(error)
-				}
+				if(error) return reject(error)
 				return resolve(outputBuffer)
 			}
 		)

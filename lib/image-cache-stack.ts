@@ -12,11 +12,11 @@ export class ImageCacheStack extends cdk.Stack {
 		// PARAMS
 		// PARAMS
 
-		const icsecret = ssm.StringParameter.fromSecureStringParameterAttributes (
-			this, 'icsecret', {parameterName: "/imagecache/secret", version: 1}
+		const secret = ssm.StringParameter.fromSecureStringParameterAttributes (
+			this, 'secret', {parameterName: "/imagecache/secret", version: 1}
 		)
-		const resizeDefault = ssm.StringParameter.fromStringParameterAttributes(
-			this, 'resizeDefault', {parameterName: "/imagecache/resizeDefault"}
+		const resizeWidth = ssm.StringParameter.fromStringParameterAttributes(
+			this, 'resizeWidth', {parameterName: "/imagecache/resizeWidth"}
 		)
 		const maxRawFileSize = ssm.StringParameter.fromStringParameterAttributes(
 			this, 'maxRawFileSize', {parameterName: "/imagecache/maxRawFileSize"}
@@ -72,7 +72,7 @@ export class ImageCacheStack extends cdk.Stack {
 			timeout: cdk.Duration.seconds(15),
 			environment: {
 				TABLE_NAME: tableName,
-				RESIZE_DEFAULT: resizeDefault.stringValue,
+				RESIZE_WIDTH: resizeWidth.stringValue,
 				MAX_RAW_FILE_SIZE: maxRawFileSize.stringValue,
 				MAX_COOKED_FILE_SIZE: maxCookedFileSize.stringValue
 			}
@@ -102,9 +102,9 @@ export class ImageCacheStack extends cdk.Stack {
 		table.grantReadWriteData(dlLambda)
 		table.grantReadData(getLambda)
 
-		icsecret.grantRead(authLambda)
+		secret.grantRead(authLambda)
 
-		// resizeDefault.grantRead(addLambda)
+		// resizeWidth.grantRead(addLambda)
 
 		// API
 		// API
@@ -177,7 +177,7 @@ export class ImageCacheStack extends cdk.Stack {
 		})
 
 		new cdk.CfnOutput(this, 'IMAGE CACHE RESIZE DEFAULT', {
-			value: resizeDefault.stringValue
+			value: resizeWidth.stringValue
 		})
 
 	}
