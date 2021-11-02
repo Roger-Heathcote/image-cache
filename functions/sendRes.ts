@@ -14,12 +14,14 @@ export function sendRes(statusCode:number, body:any, contentType="json", binary=
 	if(!binary && typeof body === "string") body = {msg: body}
 	if(!binary) body.code = statusCode
 	if(statusCode !== 200) body.error = true
+	const headers: any = {
+		"Content-Type": mimeTypes[contentType],
+		"Cache-Control": binary ? `private, immutable, max-age=${cacheLength}` : "no-store"
+	}
+	if(binary) headers.ETag = "1"
 	return {
 		statusCode,
-		headers: {
-			"Content-Type": mimeTypes[contentType],
-			"Cache-Control": binary ? `private, immutable, max-age=${cacheLength}` : "no-store"
-		},
+		headers,
 		body: binary ? body : JSON.stringify(body),
 		isBase64Encoded: binary,
 	}

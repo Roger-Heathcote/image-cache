@@ -11,7 +11,11 @@ const {DynamoDB} = aws
 const TableName = process.env.TABLE_NAME
 
 exports.handler = async function(event:GPE): Promise<GPR> {
+
 	console.log("GET handler ran", )
+	
+	if(event.headers["If-None-Match"]) return {statusCode: 304} as GPR
+
 	const file = event.pathParameters?.file || ""
 	if(!file) return sendRes(400, "No param")
 	if(file?.length < 67) return sendRes(400, "Too short")

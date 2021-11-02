@@ -1,8 +1,5 @@
 export {} // Tell TS we want module scoping
-import {
-	APIGatewayProxyEvent as GPE,
-	APIGatewayProxyResult as GPR
-} from "aws-lambda"
+import {APIGatewayProxyEvent as GPE} from "aws-lambda"
 import { sendRes } from "./sendRes"
 const gm = require('gm').subClass({
 	imageMagick: true,
