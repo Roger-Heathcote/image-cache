@@ -3,6 +3,7 @@ import {
 	APIGatewayProxyEvent as GPE,
 	APIGatewayProxyResult as GPR
 } from "aws-lambda"
+import { sendRes } from "./sendRes"
 const aws = require('aws-sdk')
 aws.config.update({region: 'eu-west-2'})
 const {DynamoDB} = aws
@@ -43,14 +44,14 @@ exports.handler = async function(event:GPE): Promise<GPR>{
 	return sendRes(200, `${Item.id}.${Item.type}`)
 }
 
-const sendRes = (status:number, body:any) => {
+// const sendRes = (status:number, body:any) => {
 	
-	const response = {
-		statusCode: status,
-		headers: {
-			"Content-Type": "text/html"
-		},
-		body
-	}
-	return response
-}
+// 	const response = {
+// 		statusCode: status,
+// 		headers: {
+// 			"Content-Type": "text/html"
+// 		},
+// 		body
+// 	}
+// 	return response
+// }

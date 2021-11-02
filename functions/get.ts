@@ -3,20 +3,12 @@ import {
 	APIGatewayProxyEvent as GPE,
 	APIGatewayProxyResult as GPR
 } from "aws-lambda"
+import { sendRes } from "./sendRes"
 
 const aws = require('aws-sdk')
 aws.config.update({region: 'eu-west-2'})
 const {DynamoDB} = aws
 const TableName = process.env.TABLE_NAME
-const cacheLength = process.env.CACHE_LENGTH || "3600"
-
-const mimeTypes: any = {
-	"webp": "image/webp",
-	"png": "image/png",
-	"jpg": "image/jpeg",
-	"jpeg": "image/jpeg",
-	"txt": "text/plain"
-}
 
 exports.handler = async function(event:GPE): Promise<GPR> {
 	console.log("GET handler ran", )
@@ -38,22 +30,12 @@ exports.handler = async function(event:GPE): Promise<GPR> {
 	if(!record) return sendRes(400, "No result found")
 	if(record?.type !== ext) return sendRes(400, "Bad ext")
 
+	console.log("RECORD TYPE", record.type)
+
 	return sendRes(
 		200,
 		record.data,
-		record.type
+		record.type,
+		true // binary
 	)
-}
-
-const sendRes = (status:number, body:any, contentType="txt") => {
-	const response: GPR = {
-		statusCode: status,
-		headers: {
-			"Content-Type": mimeTypes[contentType],
-			"Cache-Control": status===200 ? `private, immutable, max-age=${cacheLength}` : "no-store"
-		},
-		body,
-		isBase64Encoded: status===200,
-	}
-	return response
 }

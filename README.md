@@ -27,6 +27,7 @@ These Parameter Store parameters are read at deployment time...
 - `/imagecache/cacheLength` (String::seconds, default 3600) How many seconds should browsers cache for, recommended 31536000.
 - `/imagecache/maxCookedFileSize` (String::bytes, default 350,000) Reject recompressed images larger than
 - `/imagecache/maxRawFileSize` (String::bytes, default 2,000,000) Reject downloads larger than
+- `/imagecache/downloadTimeout` (String::bytes, default 2,000,000) Reject downloads larger than
 
 ## Upload tool
 

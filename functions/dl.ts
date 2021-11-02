@@ -3,6 +3,7 @@ import {
 	APIGatewayProxyEvent as GPE,
 	APIGatewayProxyResult as GPR
 } from "aws-lambda"
+import { sendRes } from "./sendRes"
 const gm = require('gm').subClass({
 	imageMagick: true,
 })
@@ -108,19 +109,5 @@ exports.handler = async function(event:GPE) {
 		return sendRes(error?.status || 400, {
 			msg: JSON.stringify(error, null, 4)
 		})
-	}
-}
-
-const sendRes = (status:number, body:any) => {
-	if(status !== 200) body.error = true
-	body.code = status
-	console.log(`CODE:${body.code} STATUS:${status}`)
-	return {
-		statusCode: 200,
-		headers: {
-			"Content-Type": 'application/json',
-		},
-		body: JSON.stringify(body),
-		isBase64Encoded: false,
 	}
 }
