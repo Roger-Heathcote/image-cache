@@ -41,17 +41,5 @@ exports.handler = async function(event:GPE): Promise<GPR>{
 		Item
 	}).promise()
 
-	return sendRes(200, `${Item.id}.${Item.type}`)
+	return sendRes(200, {path: `${Item.id}.${Item.type}`})
 }
-
-// const sendRes = (status:number, body:any) => {
-	
-// 	const response = {
-// 		statusCode: status,
-// 		headers: {
-// 			"Content-Type": "text/html"
-// 		},
-// 		body
-// 	}
-// 	return response
-// }

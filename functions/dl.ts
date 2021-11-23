@@ -100,7 +100,7 @@ exports.handler = async function(event:GPE) {
 			Item
 		}).promise()
 
-		return sendRes(200, { url: `${Item.id}.${Item.type}` })
+		return sendRes(200, { path: `${Item.id}.${Item.type}` })
 
 	} catch(error) {
 		return sendRes(error?.status || 400, {
