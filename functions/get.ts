@@ -34,7 +34,7 @@ exports.handler = async function(event:GPE): Promise<GPR> {
 	if(!record) return sendRes(400, "No result found")
 	if(record?.type !== ext) return sendRes(400, "Bad ext")
 
-	console.log("RECORD TYPE", record.type)
+	// console.log("RECORD TYPE", record.type)
 
 	return sendRes(
 		200,

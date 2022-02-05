@@ -25,9 +25,11 @@ function convDone(err:any){
 	})
 	.then( (res: any) => {
 		console.log(`OK:`, endpoint + "/get/" + res.data)
+		console.log(JSON.stringify(res.data, null, 4))
 	})
 	.catch(console.error)
 
 }
 
-gm(inputFileName).resize(32).write(`${__dirname}/payload.webp`, convDone)
+// gm(inputFileName).resize(256).write(`${__dirname}/payload.webp`, convDone)
+gm(inputFileName).write(`${__dirname}/payload.webp`, convDone)
