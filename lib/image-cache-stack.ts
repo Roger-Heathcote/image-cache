@@ -14,7 +14,7 @@ export class ImageCacheStack extends cdk.Stack {
 
 		const params = getParameters(this, [
 			{name: "secret", secure: true, asObj: true},
-			"resizeWidth", "maxRawFileSize", "maxCookedFileSize", "cacheLength"
+			"resizeWidth", "maxRawFileSize", "maxCookedFileSize"
 		])
 
 		// DATABASE
@@ -73,7 +73,6 @@ export class ImageCacheStack extends cdk.Stack {
 			handler: "get.handler",
 			environment: {
 				TABLE_NAME: tableName,
-				CACHE_LENGTH: params.cacheLength
 			}
 		})
 
@@ -103,6 +102,7 @@ export class ImageCacheStack extends cdk.Stack {
 			restApiName: "image cache",
 			description: "Caches images and serve with very long expiry",
 			binaryMediaTypes: ["*/*"],
+			minimumCompressionSize: 0,
 			deployOptions: {
 				methodOptions: {
 					'/*/*': {

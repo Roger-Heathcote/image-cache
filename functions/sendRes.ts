@@ -1,5 +1,4 @@
 import {APIGatewayProxyResult as GPR} from "aws-lambda"
-const cacheLength = process.env.CACHE_LENGTH || "3600"
 
 const mimeTypes: any = {
 	"webp": "image/webp",
@@ -16,7 +15,7 @@ export function sendRes(statusCode:number, body:any, contentType="json", binary=
 	if(statusCode !== 200) body.error = true
 	const headers: any = {
 		"Content-Type": mimeTypes[contentType],
-		"Cache-Control": binary ? `private, immutable, max-age=${cacheLength}` : "no-store"
+		"Cache-Control": binary ? `private, immutable, max-age=31536000` : "no-store"
 	}
 	if(binary) headers.ETag = "1"
 	return {

@@ -18,7 +18,10 @@ const downloadTimeout = Number(process.env.DOWNLOAD_TIMEOUT || 5000)
 function resize(buffer:Buffer, fileName:string): Promise<Buffer> {
 	return new Promise((resolve, reject) => {
 		gm(buffer, fileName)
+		.background("transparent")
 		.resize(resizeWidth)
+		.gravity("Center")
+		.extent(resizeWidth, resizeWidth*0.75)
 		.setFormat('webp')
 		.toBuffer(
 			function(error:any, outputBuffer:Buffer){

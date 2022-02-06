@@ -24,10 +24,18 @@ function convDone(err:any){
 		},
 	})
 	.then( (res: any) => {
-		console.log(`OK:`, endpoint + "/get/" + res.data)
+		console.log(`OK:`, addEndpoint)
+		console.log(JSON.stringify(res.data, null, 4))
 	})
 	.catch(console.error)
 
 }
 
-gm(inputFileName).resize(32).write(`${__dirname}/payload.webp`, convDone)
+const resizeWidth = 300
+
+gm(inputFileName)
+.background("transparent")
+.resize(resizeWidth)
+.gravity("Center")
+.extent(resizeWidth, resizeWidth*0.75)
+.write(`${__dirname}/payload.webp`, convDone)
